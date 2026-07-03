@@ -1,0 +1,49 @@
+classDiagram
+    class Owner {
+        +str name
+        +str availability
+        +addPet(Pet)
+        +updateInfo()
+    }
+
+    class Pet {
+        +str name
+        +str species
+        +str breed
+        +int age
+        +addTask(Task)
+    }
+
+    class Task {
+        +str name
+        +int duration
+        +int priority
+        +str type
+        +updateTask()
+    }
+
+    class Scheduler {
+        +int available_minutes
+        +build_plan(pet: Pet) Plan
+        +filter_by_time(tasks) list
+        +sort_by_priority(tasks) list
+    }
+
+    class Plan {
+        +date date
+        +list scheduled_tasks
+        +display() str
+        +explain() str
+    }
+
+    class ScheduledTask {
+        +str start_time
+        +str reasoning
+    }
+
+    Owner "1" --> "1..*" Pet : owns
+    Pet "1" --> "0..*" Task : has
+    Scheduler ..> Pet : uses
+    Scheduler ..> Plan : produces
+    Plan "1" --> "0..*" ScheduledTask : contains
+    ScheduledTask --> Task : wraps
