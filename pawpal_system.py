@@ -8,19 +8,21 @@ _AVAILABILITY_RE = re.compile(
     re.IGNORECASE,
 )
 
+PRIORITY_VALUES = {"low": 1, "medium": 2, "high": 3}
+
 
 @dataclass
 class Task:
     name: str
     duration: int
-    priority: int
+    priority: str
     type: str
 
     def updateTask(
         self,
         name: str | None = None,
         duration: int | None = None,
-        priority: int | None = None,
+        priority: str | None = None,
         type: str | None = None,
     ) -> None:
         if name is not None:
@@ -156,4 +158,4 @@ class Scheduler:
         return selected
 
     def sort_by_priority(self, tasks: list[Task]) -> list[Task]:
-        return sorted(tasks, key=lambda task: task.priority, reverse=True)
+        return sorted(tasks, key=lambda task: PRIORITY_VALUES[task.priority], reverse=True)
