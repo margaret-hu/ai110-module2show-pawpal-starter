@@ -37,6 +37,9 @@ class Owner:
     def updateInfo(self) -> None:
         pass
 
+    def available_minutes(self) -> int:
+        pass
+
 
 @dataclass
 class ScheduledTask:
@@ -47,6 +50,7 @@ class ScheduledTask:
 
 @dataclass
 class Plan:
+    pet: Pet
     date: Date
     scheduled_tasks: list[ScheduledTask] = field(default_factory=list)
 
@@ -61,7 +65,9 @@ class Plan:
 class Scheduler:
     available_minutes: int
 
-    def build_plan(self, pet: Pet) -> Plan:
+    def build_plan(self, pet: Pet, date: Date) -> Plan:
+        # order matters: sort by priority before filtering by time, so
+        # higher-priority tasks aren't crowded out by earlier lower-priority ones
         pass
 
     def filter_by_time(self, tasks: list[Task]) -> list[Task]:
