@@ -17,6 +17,11 @@ class Task:
     duration: int
     priority: str
     type: str
+    status: str = "incomplete"
+
+    def mark_complete(self) -> None:
+        """Mark this task's status as complete."""
+        self.status = "complete"
 
     def updateTask(
         self,
@@ -25,6 +30,7 @@ class Task:
         priority: str | None = None,
         type: str | None = None,
     ) -> None:
+        """Update the given fields of this task, leaving unspecified ones unchanged."""
         if name is not None:
             self.name = name
         if duration is not None:
@@ -44,6 +50,7 @@ class Pet:
     tasks: list[Task] = field(default_factory=list)
 
     def addTask(self, task: Task) -> None:
+        """Add a task to this pet's task list."""
         self.tasks.append(task)
 
 
@@ -54,18 +61,22 @@ class Owner:
     pets: list[Pet] = field(default_factory=list)
 
     def addPet(self, pet: Pet) -> None:
+        """Add a pet to this owner's list of pets."""
         self.pets.append(pet)
 
     def updateInfo(self, name: str | None = None, availability: str | None = None) -> None:
+        """Update the given fields of this owner, leaving unspecified ones unchanged."""
         if name is not None:
             self.name = name
         if availability is not None:
             self.availability = availability
 
     def all_tasks(self) -> list[Task]:
+        """Return every task across all of this owner's pets."""
         return [task for pet in self.pets for task in pet.tasks]
 
     def available_minutes(self) -> int:
+        """Parse this owner's availability string into a number of minutes."""
         text = self.availability.strip().lower()
         if not text:
             return 0
@@ -99,6 +110,7 @@ class Plan:
     scheduled_tasks: list[ScheduledTask] = field(default_factory=list)
 
     def display(self) -> str:
+        """Render this plan's scheduled tasks as a human-readable itinerary."""
         lines = [f"Daily plan for {self.pet.name} ({self.pet.breed}) — {self.date.isoformat()}:"]
         if not self.scheduled_tasks:
             lines.append("  No tasks scheduled.")
@@ -110,6 +122,7 @@ class Plan:
         return "\n".join(lines)
 
     def explain(self) -> str:
+        """Render the reasoning behind each scheduled task's placement in this plan."""
         if not self.scheduled_tasks:
             return f"No tasks were scheduled for {self.pet.name} on {self.date.isoformat()}."
         lines = [f"Reasoning for {self.pet.name}'s plan on {self.date.isoformat()}:"]
@@ -123,6 +136,7 @@ class Scheduler:
     available_minutes: int
 
     def build_plan(self, pet: Pet, date: Date) -> Plan:
+        """Build a time-ordered plan for the given pet and date, prioritizing higher-priority tasks."""
         # order matters: sort by priority before filtering by time, so
         # higher-priority tasks aren't crowded out by earlier lower-priority ones
         ordered = self.sort_by_priority(pet.tasks)
@@ -149,6 +163,7 @@ class Scheduler:
         return Plan(pet=pet, date=date, scheduled_tasks=scheduled_tasks)
 
     def filter_by_time(self, tasks: list[Task]) -> list[Task]:
+        """Select tasks, in order, that fit within the available minutes."""
         remaining = self.available_minutes
         selected = []
         for task in tasks:
@@ -158,4 +173,5 @@ class Scheduler:
         return selected
 
     def sort_by_priority(self, tasks: list[Task]) -> list[Task]:
+        """Return tasks sorted from highest to lowest priority."""
         return sorted(tasks, key=lambda task: PRIORITY_VALUES[task.priority], reverse=True)
