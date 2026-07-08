@@ -134,9 +134,18 @@ class Plan:
 @dataclass
 class Scheduler:
     available_minutes: int
+    remaining_minutes: int = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.remaining_minutes = self.available_minutes
 
     def build_plan(self, pet: Pet, date: Date) -> Plan:
-        """Build a time-ordered plan for the given pet and date, prioritizing higher-priority tasks."""
+        """Build a time-ordered plan for the given pet and date, prioritizing higher-priority tasks.
+
+        Consumes from this scheduler's shared remaining_minutes pool, so calling this
+        for multiple pets in a row correctly splits one owner's time budget between them
+        instead of granting each pet the full available_minutes independently.
+        """
         # order matters: sort by priority before filtering by time, so
         # higher-priority tasks aren't crowded out by earlier lower-priority ones
         ordered = self.sort_by_priority(pet.tasks)
@@ -144,11 +153,10 @@ class Scheduler:
 
         scheduled_tasks = []
         current_time = datetime.combine(date, datetime.min.time()) + timedelta(hours=8)
-        remaining = self.available_minutes
         for rank, task in enumerate(selected, start=1):
             reasoning = (
                 f"Ranked #{rank} by priority ({task.priority}) and fits within the "
-                f"{remaining} minute(s) remaining today."
+                f"{self.remaining_minutes} minute(s) remaining today."
             )
             scheduled_tasks.append(
                 ScheduledTask(
@@ -158,13 +166,13 @@ class Scheduler:
                 )
             )
             current_time += timedelta(minutes=task.duration)
-            remaining -= task.duration
+            self.remaining_minutes -= task.duration
 
         return Plan(pet=pet, date=date, scheduled_tasks=scheduled_tasks)
 
     def filter_by_time(self, tasks: list[Task]) -> list[Task]:
-        """Select tasks, in order, that fit within the available minutes."""
-        remaining = self.available_minutes
+        """Select tasks, in order, that fit within the remaining minutes."""
+        remaining = self.remaining_minutes
         selected = []
         for task in tasks:
             if task.duration <= remaining:
