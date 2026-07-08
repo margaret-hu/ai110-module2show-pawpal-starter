@@ -37,13 +37,15 @@
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
+- What constraints does your scheduler consider (for example: time, priority, preferences)? Time and priority
 - How did you decide which constraints mattered most?
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+- Describe one tradeoff your scheduler makes.\
+  `Scheduler.filter_by_time()` uses 0/1 knapsack dynamic programming instead of a greedy priority pass to decide which tasks fit in the available time. A greedy approach (take tasks in priority order until time runs out) is faster but can waste the budget — e.g. one long "high" priority task can crowd out several "medium" tasks that together would fit and deliver more total value. Knapsack is more expensive (O(n × capacity) in time and space, versus O(n log n) for greedy), but it guarantees the selected subset maximizes total priority value for the given time budget.
+- Why is that tradeoff reasonable for this scenario?\
+  Each pet's task list is small (a handful of daily care tasks) and the time budget is bounded to a day's worth of minutes, so the O(n × capacity) DP table is cheap in practice — there's no real performance cost to paying for optimality here. That makes it a good trade: better use of the owner's limited time with no meaningful runtime penalty. (Priority sorting is still used afterward, in `sort_by_priority()`, but only to *order* the already-selected tasks throughout the day, not to decide which ones make the cut.)
 
 ---
 
@@ -51,13 +53,17 @@
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?\
+  I used AI throughout, not just at the UML stage. Early on I used it to brainstorm which classes and methods belonged in the design. Later I used it for implementation-level work: wiring the Streamlit UI in `app.py` to real `Owner`/`Pet`/`Task`/`Scheduler` objects instead of placeholder inputs, debugging a bug where `Scheduler.available_minutes` was being treated as a fresh budget for every pet instead of one shared pool across pets in the same `build_plan` loop, and adding the `Task.status`/`mark_complete()` feature along with matching docstrings and pytest tests.
+- What kinds of prompts or questions were most helpful?\
+  Prompts that named a concrete, observable gap were the most productive — for example, describing the specific symptom of the shared-time-budget bug (each pet getting the full budget instead of splitting one owner's time) rather than just saying "check the scheduler for bugs." Similarly, "replace the placeholder inputs in app.py with the real domain classes" gave a clearer target than a vague "improve the UI" request. Open-ended prompts were more useful early, for brainstorming design options; specific, symptom-first prompts were more useful once I was debugging or extending working code.
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+- Describe one moment where you did not accept an AI suggestion as-is.\
+The UML design model the AI suggested was missing methods for adding and updating a task on the domain objects.
+- How did you evaluate or verify what the AI suggested?\
+I checked the design against the assignment requirements, which state that the final app should let a user add and edit tasks. Since the AI's suggested methods didn't cover that, I added the missing methods myself.
 
 ---
 

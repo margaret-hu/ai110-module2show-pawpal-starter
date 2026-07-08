@@ -44,14 +44,17 @@ pip install -r requirements.txt
 
 ## 🖥️ Sample Output
 
-Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
-
 ```
-# e.g.:
-# Daily plan for Biscuit (Golden Retriever):
-#   08:00 — Morning walk (30 min) [priority: high]
-#   09:00 — Feeding (10 min) [priority: high]
-#   ...
+Today's Schedule
+=================
+Daily plan for Rex (Labrador) — 2026-07-07:
+  08:00 — Feed breakfast (10 min) [priority: high]
+  08:10 — Feed breakfast (10 min) [priority: high]
+  08:20 — Evening walk (20 min) [priority: medium]
+  08:40 — Morning walk (30 min) [priority: medium]
+
+Daily plan for Whiskers (Siamese) — 2026-07-07:
+  09:10 — Litter box cleaning (15 min) [priority: high]
 ```
 
 ## 🧪 Testing PawPal+
@@ -72,14 +75,12 @@ Sample test output:
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
-
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Sorting | `Scheduler.sort_by_priority()`, `Scheduler.sort_by_time()` | `sort_by_priority` orders tasks highest-to-lowest priority, breaking ties by shorter duration first. `sort_by_time` orders tasks by their `time` field, earliest first, with untimed tasks pushed to the end. |
+| Filtering | `Scheduler.filter_by_time()`, `Owner.filter_tasks()` | `filter_by_time` selects the subset of a pet's tasks that maximizes total priority within the owner's remaining minutes, using a 0/1 knapsack (duration = weight, priority = value) instead of a greedy cutoff, so several lower-priority tasks aren't crowded out by one long high-priority task. `filter_tasks` filters an owner's tasks by completion `status` and/or `pet_name`, independent of scheduling. |
+| Conflict detection | `Scheduler.find_conflicts()`, `Scheduler.conflict_warning()` | `find_conflicts` compares every pair of tasks scheduled on the same date (across all pets) and reports any whose time windows overlap. `Scheduler.build_plan()` also consults each date's already-busy intervals (via `Scheduler._next_free_start()`) to push a new task's start time past conflicts before they happen, so `find_conflicts`/`conflict_warning` mainly guard against conflicts introduced by manually editing a task's time afterward. |
+| Recurring tasks | `Task.next_occurrence()`, `Task.mark_complete()`, `Pet.complete_task()` | `next_occurrence` builds a fresh incomplete `Task` advanced by one day (`daily`) or one week (`weekly`) based on the task's `recurrence` field, or returns `None` if it doesn't recur. `mark_complete` marks a task complete and returns its next occurrence (if any); `Pet.complete_task` calls this and automatically appends the new occurrence to the pet's task list. |
 
 ## 📸 Demo Walkthrough
 

@@ -81,7 +81,7 @@ pet = owner.pets[active_index]
 st.markdown("### Tasks")
 st.caption(f"Add a few tasks for {pet.name}. These feed into your scheduler below.")
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
     task_title = st.text_input("Task title", value="Morning walk")
 with col2:
@@ -90,20 +90,39 @@ with col3:
     priority = st.selectbox("Priority", ["low", "medium", "high"], index=2)
 with col4:
     task_type = st.selectbox("Type", ["exercise", "feeding", "grooming", "medication", "other"])
+with col5:
+    recurrence = st.selectbox("Repeats", ["none", "daily", "weekly"])
+
+# Uncomment to test due_date rollover on recurring tasks (see Task.next_occurrence):
+# due_date = st.date_input("Due date", value=date.today())
 
 if st.button("Add task"):
-    pet.addTask(Task(name=task_title, duration=int(duration), priority=priority, type=task_type))
+    pet.addTask(
+        Task(
+            name=task_title,
+            duration=int(duration),
+            priority=priority,
+            type=task_type,
+            recurrence=None if recurrence == "none" else recurrence,
+            # due_date=due_date,
+        )
+    )
 
 if pet.tasks:
     st.write("Current tasks:")
     for task in pet.tasks:
         task_col, status_col = st.columns([4, 1])
         with task_col:
-            st.write(f"**{task.name}** — {task.duration} min, {task.priority} priority, {task.type}")
+            label = f"**{task.name}** — {task.duration} min, {task.priority} priority, {task.type}"
+            if task.recurrence:
+                label += f" (repeats {task.recurrence})"
+            # if task.due_date:
+            #     label += f" [due {task.due_date.isoformat()}]"
+            st.write(label)
         with status_col:
             done = st.checkbox("Done", value=task.status == "complete", key=f"done-{id(task)}")
-            if done:
-                task.mark_complete()
+            if done and task.status != "complete":
+                pet.complete_task(task)
 else:
     st.info("No tasks yet. Add one above.")
 
