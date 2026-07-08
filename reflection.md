@@ -28,7 +28,11 @@
     1. `Scheduler.build_plan(pet)` had no `date` parameter, even though the `Plan` it returns requires one — there was no way to know which day a plan was being built for. I added a `date` argument to `build_plan`.
     2. `Plan` had no reference back to the `Pet` it was built for, so a `Plan` object on its own couldn't say whose plan it was. I added a `pet` field to `Plan`.
     3. `Owner.availability` (a string) and `Scheduler.available_minutes` (an int) represented the same real-world constraint but had no defined relationship, leaving it unclear how one becomes the other. I added an `Owner.available_minutes()` method as the conversion point between the two.
-  
+
+  Two more gaps surfaced later, once recurrence and multi-pet scheduling were implemented:
+    4. `Task` originally had no way to represent recurring care needs. I added `Task.next_occurrence()`, which creates a fresh `Task` for the next due date, and `Task.mark_complete()`, which marks a task complete and returns that next occurrence. This introduces a self-referential dependency (`Task` creates `Task`) that wasn't in the original model. `Pet.complete_task()` is the method that actually drives this — it calls `mark_complete()` and appends the resulting occurrence back onto the pet's task list.
+    5. The original `Scheduler` was modeled as a stateless, per-call service — "takes a Pet's tasks and available time" — with no way to represent that one owner's time budget must be shared across multiple pets scheduled in the same run. I made `Scheduler` stateful: it now holds `remaining_minutes` (drawn down across calls) and a `scheduled` list of every `(date, pet, scheduled_task)` triple it has placed so far, across all pets and dates. That history is also what powers `find_conflicts()`/`conflict_warning()` and lets `build_plan()` avoid double-booking a time slot across pets — none of which existed in the original design.
+
   I made these changes because they were structural gaps that would have caused ambiguity or bugs once the methods were implemented, not because the original responsibilities split (data holders vs. scheduling logic vs. output) was wrong.
 
 ---

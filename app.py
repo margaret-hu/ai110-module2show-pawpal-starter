@@ -109,30 +109,75 @@ if st.button("Add task"):
     )
 
 if pet.tasks:
-    st.write("Current tasks:")
-    for task in pet.tasks:
-        task_col, status_col = st.columns([4, 1])
-        with task_col:
-            label = f"**{task.name}** — {task.duration} min, {task.priority} priority, {task.type}"
-            if task.recurrence:
-                label += f" (repeats {task.recurrence})"
-            # if task.due_date:
-            #     label += f" [due {task.due_date.isoformat()}]"
-            st.write(label)
-        with status_col:
-            done = st.checkbox("Done", value=task.status == "complete", key=f"done-{id(task)}")
+    sort_col, filter_col = st.columns(2)
+    with sort_col:
+        sort_choice = st.selectbox("Sort by", ["Priority", "Time"])
+    with filter_col:
+        status_choice = st.selectbox("Filter by status", ["All", "Incomplete", "Complete"])
+
+    status_filter = {"All": None, "Incomplete": "incomplete", "Complete": "complete"}[status_choice]
+    filtered_tasks = owner.filter_tasks(status=status_filter, pet_name=pet.name)
+
+    sorter = Scheduler(available_minutes=owner.available_minutes())
+    if sort_choice == "Priority":
+        visible_tasks = sorter.sort_by_priority(filtered_tasks)
+    else:
+        visible_tasks = sorter.sort_by_time(filtered_tasks)
+
+    if visible_tasks:
+        st.table(
+            [
+                {
+                    "Task": task.name,
+                    "Time": task.time or "—",
+                    "Duration (min)": task.duration,
+                    "Priority": task.priority,
+                    "Type": task.type,
+                    "Recurrence": task.recurrence or "—",
+                    "Status": task.status,
+                }
+                for task in visible_tasks
+            ]
+        )
+        for task in visible_tasks:
+            done = st.checkbox(f"Mark '{task.name}' done", value=task.status == "complete", key=f"done-{id(task)}")
             if done and task.status != "complete":
                 pet.complete_task(task)
+    else:
+        st.info("No tasks match this filter.")
 else:
     st.info("No tasks yet. Add one above.")
 
 st.divider()
 
 st.subheader("Build Schedule")
-st.caption(f"Generates a schedule for {pet.name} using your Scheduler class.")
+st.caption("Generates a schedule for every pet, sharing the owner's available minutes and checking for conflicts.")
 
 if st.button("Generate schedule"):
     scheduler = Scheduler(available_minutes=owner.available_minutes())
-    plan = scheduler.build_plan(pet, date.today())
-    st.text(plan.display())
-    st.text(plan.explain())
+    today = date.today()
+    for scheduled_pet in owner.pets:
+        plan = scheduler.build_plan(scheduled_pet, today)
+        st.markdown(f"**{scheduled_pet.name}**")
+        if plan.scheduled_tasks:
+            st.table(
+                [
+                    {
+                        "Time": scheduled.start_time,
+                        "Task": scheduled.task.name,
+                        "Duration (min)": scheduled.task.duration,
+                        "Priority": scheduled.task.priority,
+                    }
+                    for scheduled in plan.scheduled_tasks
+                ]
+            )
+            with st.expander(f"Why this plan for {scheduled_pet.name}?"):
+                st.text(plan.explain())
+        else:
+            st.info(f"No tasks scheduled for {scheduled_pet.name}.")
+
+    warning = scheduler.conflict_warning()
+    if warning:
+        st.warning(warning)
+    else:
+        st.success("No scheduling conflicts detected.")

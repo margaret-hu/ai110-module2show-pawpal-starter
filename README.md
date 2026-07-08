@@ -132,12 +132,69 @@ The core scheduling logic (knapsack selection, priority/time ordering, shared-bu
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+### UI features
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+The Streamlit app (`app.py`) is organized into a few sections:
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+- **Owner** — enter the owner's name and total daily availability (e.g. `2h30m`), which becomes the shared time budget for scheduling.
+- **Add a Pet** — enter a name, species, breed, and age, then click **Add pet**. Added pets appear in an **Active pet** dropdown so you can switch between them.
+- **Tasks** — for the active pet, enter a task title, duration, priority, type, and recurrence (none/daily/weekly), then click **Add task**. The task list can be sorted (by priority or time) and filtered (all/incomplete/complete), and each task has a checkbox to mark it done — which queues up the next occurrence automatically if it recurs.
+- **Build Schedule** — click **Generate schedule** to run the scheduler for every pet against the owner's shared availability. Each pet gets a table of scheduled tasks, an expandable "Why this plan?" explanation, and an overall conflict warning (or a success message if none are found).
+
+### Example workflow
+
+1. Enter an owner name and availability (e.g. `Jordan`, `2h`).
+2. Add a pet (e.g. `Mochi`, a `dog`).
+3. Add a few tasks for that pet with different priorities, durations, and optional times (e.g. `Morning walk` — 20 min, high priority; `Feed breakfast` — 10 min, high priority, daily recurrence).
+4. Sort/filter the task list to review what's queued up.
+5. Click **Generate schedule** to view today's plan for every pet, see the reasoning behind it, and check for any scheduling conflicts.
+6. Mark a task complete — if it recurs, its next occurrence is added automatically.
+
+### Key Scheduler behaviors
+
+- **Sorting** — `sort_by_priority` orders tasks highest-to-lowest priority (ties broken by shorter duration first); `sort_by_time` orders tasks earliest-first, pushing untimed tasks to the end.
+- **Budget-aware selection** — `filter_by_time` uses a 0/1 knapsack over the owner's remaining minutes so a single long high-priority task doesn't crowd out several shorter ones.
+- **Shared time budget** — the owner's availability is shared across all of their pets when `build_plan` runs for each one in turn, so scheduling one pet's tasks reduces what's left for the next.
+- **Conflict warnings** — `build_plan` proactively schedules around existing busy intervals, and `conflict_warning`/`find_conflicts` catch any overlaps introduced afterward (e.g. two tasks manually pinned to the same time).
+- **Recurrence** — completing a `daily` or `weekly` task automatically queues up its next occurrence.
+
+### Sample CLI output
+
+Running `python main.py` (which seeds two pets, adds tasks out of chronological order, completes a recurring task, and manually pins two tasks to the same time to demonstrate conflict detection) produces:
+
+```
+Today's Schedule
+=================
+Daily plan for Rex (Labrador) — 2026-07-08:
+  08:00 — Feed breakfast (10 min) [priority: high]
+  08:10 — Evening walk (20 min) [priority: medium]
+  08:30 — Morning walk (30 min) [priority: medium]
+
+Daily plan for Whiskers (Siamese) — 2026-07-08:
+  09:00 — Litter box cleaning (15 min) [priority: high]
+
+Conflict Check
+==============
+Warning: scheduling conflicts detected:
+  - Whiskers's 'Litter box cleaning' at 09:00 overlaps Rex's 'Vet checkup' at 09:00
+  - Whiskers's 'Litter box cleaning' at 09:00 overlaps Whiskers's 'Grooming' at 09:00
+  - Rex's 'Vet checkup' at 09:00 overlaps Whiskers's 'Grooming' at 09:00
+
+Rex's Tasks Sorted by Time
+==========================
+  07:00 — Feed breakfast
+  07:00 — Feed breakfast
+  08:30 — Morning walk
+  18:00 — Evening walk
+
+Completed Tasks (all pets)
+===========================
+  Feed breakfast
+
+Rex's Tasks Only
+================
+  Evening walk [incomplete, recurrence=None]
+  Feed breakfast [complete, recurrence=daily]
+  Morning walk [incomplete, recurrence=None]
+  Feed breakfast [incomplete, recurrence=daily]
+```
