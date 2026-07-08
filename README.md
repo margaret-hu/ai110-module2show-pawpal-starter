@@ -22,6 +22,20 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## ✨ Features
+
+- **Sorting by priority** — `Scheduler.sort_by_priority()` orders tasks highest-to-lowest priority, breaking ties by shorter duration first.
+- **Sorting by time** — `Scheduler.sort_by_time()` orders tasks chronologically by their `time` field, pushing untimed tasks to the end.
+- **Budget-constrained task selection (0/1 knapsack)** — `Scheduler.filter_by_time()` picks the subset of a pet's tasks that maximizes total priority value within the owner's remaining minutes, so several lower-priority tasks aren't crowded out by one long high-priority task.
+- **Shared time-budget scheduling** — `Scheduler.build_plan()` draws from one shared `remaining_minutes` pool across all of an owner's pets, so scheduling one pet's tasks correctly reduces what's left for the next.
+- **Conflict-avoiding auto-scheduling** — `Scheduler._next_free_start()` pushes a new task's start time forward past any already-busy interval on that date, so `build_plan()` never creates a conflict in the first place.
+- **Conflict warnings** — `Scheduler.find_conflicts()` / `Scheduler.conflict_warning()` detect and report overlapping time windows across pets and dates, catching conflicts introduced after the fact (e.g. manually re-timing a task).
+- **Idempotent plan building** — `build_plan()` only considers a pet's incomplete, not-yet-scheduled tasks, so calling it twice for the same pet/date doesn't re-schedule or double-charge the time budget.
+- **Daily/weekly recurrence** — `Task.next_occurrence()` generates a fresh incomplete `Task` advanced by one day or one week based on `recurrence`; `Task.mark_complete()` / `Pet.complete_task()` complete a task and automatically queue up its next occurrence.
+- **Plan explanations** — `Plan.display()` renders a human-readable itinerary; `Plan.explain()` renders the reasoning behind each task's placement (rank, priority, remaining budget).
+- **Flexible availability parsing** — `Owner.available_minutes()` parses varied availability strings (`"2h30m"`, `"2:30"`, `"90"`, decimal hours, etc.) into a minute count.
+- **Task filtering** — `Owner.filter_tasks()` filters tasks across an owner's pets by completion `status` and/or `pet_name`.
+
 ## Getting started
 
 ### Setup
