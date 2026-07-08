@@ -4,6 +4,8 @@ classDiagram
         +str availability
         +addPet(Pet)
         +updateInfo()
+        +all_tasks() list
+        +filter_tasks(status, pet_name) list
         +available_minutes() int
     }
 
@@ -13,6 +15,7 @@ classDiagram
         +str breed
         +int age
         +addTask(Task)
+        +complete_task(Task) Task
     }
 
     class Task {
@@ -20,6 +23,12 @@ classDiagram
         +int duration
         +str priority
         +str type
+        +str status
+        +str time
+        +str recurrence
+        +date due_date
+        +mark_complete() Task
+        +next_occurrence() Task
         +updateTask()
     }
 
@@ -29,6 +38,7 @@ classDiagram
         +build_plan(pet: Pet, date: date) Plan
         +filter_by_time(tasks) list
         +sort_by_priority(tasks) list
+        +sort_by_time(tasks) list
     }
 
     class Plan {
