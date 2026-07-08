@@ -25,6 +25,7 @@ classDiagram
 
     class Scheduler {
         +int available_minutes
+        +int remaining_minutes
         +build_plan(pet: Pet, date: date) Plan
         +filter_by_time(tasks) list
         +sort_by_priority(tasks) list
