@@ -71,8 +71,14 @@ I checked the design against the assignment requirements, which state that the f
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+- What behaviors did you test?\
+  The test suite (`tests/test_pawpal.py`) covers four areas:
+    1. **Task lifecycle** — marking a task complete, `updateTask` only changing the fields passed in, and recurrence chaining (`next_occurrence` for daily/weekly tasks, unrecognized recurrence returning `None`, and multiple completions in a row producing the right sequence of due dates).
+    2. **Owner/Pet aggregation** — `addPet`/`addTask` updating counts correctly, `all_tasks`/`filter_tasks` aggregating and filtering across multiple pets, and `Owner.available_minutes()` parsing the various availability string formats ("2:30", "1h 30m", "45 min", "90", "1.5h", empty string, and non-numeric garbage).
+    3. **Scheduler selection and ordering** — `filter_by_time`'s knapsack logic, including edge cases: zero capacity, a task longer than the whole budget, and equal-priority-value ties broken by using less time; `sort_by_priority` ordering high-to-low-then-shorter-first and raising on an unrecognized priority; `sort_by_time` ordering by clock time and pushing untimed tasks last (plus a test documenting the current non-zero-padded-hour string-sort bug, e.g. "10:00" sorting before "9:00").
+    4. **`build_plan` integration** — tasks scheduled back-to-back from 8am, the shared time budget being split (not duplicated) across multiple pets in the same scheduling run, conflict detection/avoidance across pets on the same date (and correctly ignoring same-time tasks on different dates), completed tasks being excluded from the plan, and calling `build_plan` twice for the same pet/date not double-scheduling.
+- Why were these tests important?\
+  These tests target the parts of the system most likely to have subtle bugs: date/recurrence arithmetic (off-by-one errors are easy to introduce), the knapsack tradeoff called out in section 2b (its correctness is only meaningful if the selection is actually optimal, not just "reasonable-looking"), and the shared-time-budget behavior that was previously broken (see section 3a) — that test exists specifically to prevent the fixed bug from regressing. The edge-case tests (zero capacity, ties, non-zero-padded time strings) also matter because these are exactly the inputs a developer is likely to overlook when refactoring, so locking in expected behavior now makes future changes safer.
 
 **b. Confidence**
 

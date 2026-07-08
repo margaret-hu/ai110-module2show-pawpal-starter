@@ -194,15 +194,25 @@ class Scheduler:
         this date's already-scheduled tasks (this pet's or another's) and pushes a task's
         start time forward past any that would otherwise overlap, so build_plan never
         creates a conflict in the first place.
+
+        Only considers this pet's incomplete tasks that haven't already been placed on
+        this date, so a completed task never comes back, and calling this twice for the
+        same pet/date (e.g. re-generating a plan) doesn't re-schedule or double-charge
+        the time budget for a task it already scheduled.
         """
+        busy = [self._interval(sched_date, scheduled) for sched_date, _, scheduled in self.scheduled if sched_date == date]
+        already_scheduled = {id(scheduled.task) for sched_date, _, scheduled in self.scheduled if sched_date == date}
+        candidates = [
+            task for task in pet.tasks if task.status == "incomplete" and id(task) not in already_scheduled
+        ]
+
         # select first (knapsack over the whole task list), then order the picked
         # tasks for the day — selection doesn't depend on input order, display does
-        selected = self.filter_by_time(pet.tasks)
+        selected = self.filter_by_time(candidates)
         ordered = self.sort_by_priority(selected)
 
         scheduled_tasks = []
         current_time = datetime.combine(date, datetime.min.time()) + timedelta(hours=8)
-        busy = [self._interval(sched_date, scheduled) for sched_date, _, scheduled in self.scheduled if sched_date == date]
         for rank, task in enumerate(ordered, start=1):
             current_time = self._next_free_start(current_time, task.duration, busy)
             reasoning = (
